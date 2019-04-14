@@ -5,7 +5,7 @@ A Clojure program designed to compute your google authenticator otp. I personall
 
 
 
-##TOTP
+## TOTP
 
 Google authenticator uses Totp (Time based One Time Password) for 2 factor authentication. 
 When you/your app registers with google authenticator, google gives you a shared secret key (could be in the form of QR code).

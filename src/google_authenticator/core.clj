@@ -63,7 +63,7 @@
                                  (Math/pow 10 6))))))
 
 (defn -main [path-to-secret-key & args]
-  (let [secret-key (apply str (filter #(not= % \newline) (slurp path-to-secret-key)))
+  (let [secret-key (apply str (remove #{\newline} (slurp path-to-secret-key)))
         otp (get-otp secret-key)]
     (if (empty? args)
       (println otp)

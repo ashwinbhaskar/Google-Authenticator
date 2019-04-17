@@ -45,22 +45,26 @@
 (defn get-hmac [secret-key] (hmac (decode-base32 secret-key)
                         (paddts-if-necessary (totp-timestamp))))
 
+(defn get-truncated-hash
+  "Does a truncation of the generated hmac hash as specified in rfc 6238
+  https://tools.ietf.org/html/rfc6238"
+  [hmac-hash]
+  (let [offset (bit-and (nth hmac-hash 19) 15)]
+    (bit-or (bit-shift-left (bit-and (nth hmac-hash offset) 127) 24)
+            (bit-shift-left (bit-and (nth hmac-hash (+ offset 1)) 255) 16)
+            (bit-shift-left (bit-and (nth hmac-hash (+ offset 2)) 255) 8)
+            (bit-and (nth hmac-hash (+ offset 3)) 255))))
+
 (defn get-otp [secret-key]
-  (let [hmac-hash (get-hmac secret-key)]
-    (def offset (bit-and (nth hmac-hash 19) 15))
-    (def truncated-hash (bit-or (bit-shift-left (bit-and (nth hmac-hash offset) 127) 24)
-                                (bit-shift-left (bit-and (nth hmac-hash (+ offset 1)) 255) 16)
-                                (bit-shift-left (bit-and (nth hmac-hash (+ offset 2)) 255) 8)
-                                (bit-and (nth hmac-hash (+ offset 3)) 255)))
+  (let [hmac-hash (get-hmac secret-key)
+        truncated-hash (get-truncated-hash hmac-hash)]
     (paddotp-if-necessary (int
                             (mod truncated-hash
                                  (Math/pow 10 6))))))
 
 (defn -main [path-to-secret-key & args]
-  (def secret-key (apply str (filter #(not= % \newline) (slurp path-to-secret-key))))
-  (def otp (get-otp secret-key))
-  (if (empty? args)
-    (println otp)
-    (spit (nth args 0) otp))
-
-  )
+  (let [secret-key (apply str (filter #(not= % \newline) (slurp path-to-secret-key)))
+        otp (get-otp secret-key)]
+    (if (empty? args)
+      (println otp)
+      (spit (nth args 0) otp))))

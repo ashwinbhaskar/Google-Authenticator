@@ -1,4 +1,4 @@
-# Google Authenticator
+# Google Authenticator [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Automate%20Google%20Authenticator%20using%20Clojure&url=https://github.com/ashwinbhaskar/Google-Authenticator)
 
 A Clojure program designed to compute your google authenticator otp. I personally use this to automate connecting to VPNs along with apple script.
  But you could find other use cases where you would want to automate the computation and submission of the OTP.

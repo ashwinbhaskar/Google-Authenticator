@@ -1,10 +1,33 @@
 (ns google-authenticator.core
+  (:require [cli-matic.core :refer [run-cmd]])
   (:import
     [org.apache.commons.codec.binary Base32]
     (javax.crypto Mac)
-    (javax.crypto.spec SecretKeySpec))
+    (javax.crypto.spec SecretKeySpec)
+    (lockfix LockFix))
   (:gen-class))
 
+
+(defmacro locking* ;; patched version of clojure.core/locking to workaround GraalVM unbalanced monitor issue
+  "Executes exprs in an implicit do, while holding the monitor of x.
+  Will release the monitor of x in all circumstances."
+  {:added "1.0"}
+  [x & body]
+  `(let [lockee# ~x]
+     (LockFix/lock lockee# (^{:once true} fn* [] ~@body))))
+
+(defn dynaload ;; patched version of clojure.spec.gen.alpha/dynaload to use patched locking macro
+  [s]
+  (let [ns (namespace s)]
+    (assert ns)
+    (locking* #'clojure.spec.gen.alpha/dynalock
+              (require (symbol ns)))
+    (let [v (resolve s)]
+      (if v
+        @v
+        (throw (RuntimeException. (str "Var " s " is not on the classpath")))))))
+
+(alter-var-root #'clojure.spec.gen.alpha/dynaload (constantly dynaload))
 
 (defn decode-base32 [base32str]
   (.decode (new Base32) base32str))
@@ -62,9 +85,42 @@
                             (mod truncated-hash
                                  (Math/pow 10 6))))))
 
-(defn -main [path-to-secret-key & args]
-  (let [secret-key (apply str (remove #{\newline} (slurp path-to-secret-key)))
+(defn gen-otp-and-write-to-file [{:keys [secret-key-file-path output-file]}]
+  (let [secret-key (apply str (remove #{\newline} (slurp secret-key-file-path)))
         otp (get-otp secret-key)]
-    (if (empty? args)
-      (println otp)
-      (spit (nth args 0) otp))))
+    (spit output-file otp)))
+
+(defn print-otp [{:keys [secret-key]}]
+  (println (get-otp secret-key)))
+
+
+(def CONFIGURATION
+  {:app         {:command     "google-authenticator"
+                 :description "A command-line to generate your google authenticator OTP"
+                 :version     "0.1"}
+   :global-opts [{:option  "base"
+                  :as      "The number base for output"
+                  :type    :int
+                  :default 10}]
+   :commands    [{:command     "gen-otp-to-tile" :short "o"
+                  :description ["Reads secret key from a file, "
+                                "Generates google authenticator otp and writes it to a file"
+                                "Looks great, doesn't it?"]
+                  :opts        [{:option "secret-key-file-path" :short "skf" :as "Second addendum" :type :string}
+                                {:option "output-file" :short "opf" :env "AA" :as "First addendum" :type :string}]
+                  :runs        gen-otp-and-write-to-file}
+                 {:command     "gen-otp" :short "p"
+                  :description "Generates google authenticator otp and prints it to the console"
+                  :opts        [{:option "secret-key" :short "sk" :as "Parameter A" :type :string}]
+                  :runs        print-otp}]})
+
+(defn -main
+  "This is our entry point.
+  Just pass parameters and configuration.
+  Commands (functions) will be invoked as appropriate."
+  [& args]
+  (run-cmd args CONFIGURATION))
+
+(comment
+  (gen-otp-and-write-to-file {:secret-key-file-path "/Users/ashwinbhaskar/.secret_key" :output-file "/Users/ashwinbhaskar/.otp"})
+  (print-otp {:secret-key "j4ok7qmclj23gwa336rrjrv254usaeig"}))

@@ -55,7 +55,7 @@ Example 2 - Read secret key from a file and write otp to a file
 java -jar target/google_authenticator-0.1.0-SNAPSHOT-standalone.jar o --secret-key-file-path ~/.secret_key --output-file ~/.otp
 ```
 
-#Usage (GraalVM)
+## Usage (GraalVM)
 
 Please follow the instruction here to generate a native image - https://github.com/BrunoBonacci/graalvm-clojure/blob/master/doc/clojure-graalvm-native-binary.md
 

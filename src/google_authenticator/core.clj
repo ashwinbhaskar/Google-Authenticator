@@ -101,7 +101,7 @@
                   :as      "The number base for output"
                   :type    :int
                   :default 10}]
-   :commands    [{:command     "gen-otp-to-tile" :short "o"
+   :commands    [{:command     "gen-otp-to-file" :short "o"
                   :description ["Reads secret key from a file, "
                                 "Generates google authenticator otp and writes it to a file"
                                 "Looks great, doesn't it?"]

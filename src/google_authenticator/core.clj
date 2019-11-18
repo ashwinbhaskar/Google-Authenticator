@@ -8,7 +8,7 @@
   (:gen-class))
 
 
-(defmacro locking* ;; patched version of clojure.core/locking to workaround GraalVM unbalanced monitor issue
+(defmacro locking*                                          ;; patched version of clojure.core/locking to workaround GraalVM unbalanced monitor issue
   "Executes exprs in an implicit do, while holding the monitor of x.
   Will release the monitor of x in all circumstances."
   {:added "1.0"}
@@ -46,8 +46,7 @@
   []
   (let [ts (quot (System/currentTimeMillis)
                  (* 30 1000))]
-    (.toByteArray (biginteger ts))
-    ))
+    (.toByteArray (biginteger ts))))
 
 (defn paddts-if-necessary
   "Takes in timestamp as byte array and pads it with 0 until its length is 8"
@@ -59,7 +58,7 @@
 
 (defn paddotp-if-necessary
   "returns otp string with length 6. Pads with zero if length is not 6"
-  [otp]
+  [^Object otp]
   (loop [acc (.toString otp)]
     (if (= (count acc) 6)
       acc
